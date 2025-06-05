@@ -1,0 +1,21 @@
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Feature cache and model files
+cache/
+*.pkl
+
+# Virtual environments
+.env
+.venv/
+venv/
+
+# OS / IDE artifacts
+.DS_Store
+*.swp
+.idea/
+.vscode/
