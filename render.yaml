@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: clip-image-search
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python clip_search_engine_v2_autorefresh.py serve
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: 'true'
+    autoDeploy: true
