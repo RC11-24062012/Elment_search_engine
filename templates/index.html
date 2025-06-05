@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CLIP Image-Text Search Engine</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+        .container {
+            background-color: #2d2d2d;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #ffffff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #363636;
+            border: 1px solid #404040;
+        }
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .step-number {
+            width: 30px;
+            height: 30px;
+            background-color: #00bfff;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .area-select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 2px solid #00bfff;
+            border-radius: 4px;
+            background-color: #2d2d2d;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+        }
+        .area-select:hover {
+            border-color: #33ccff;
+        }
+        .area-select:focus {
+            outline: none;
+            border-color: #33ccff;
+            box-shadow: 0 0 5px rgba(0,191,255,0.3);
+        }
+        .area-select option {
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        .search-container {
+            display: none;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #404040;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        .search-box:focus {
+            outline: none;
+            border-color: #00bfff;
+            box-shadow: 0 0 5px rgba(0,191,255,0.3);
+        }
+        .search-button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            background-color: #00bfff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .search-button:hover {
+            background-color: #33ccff;
+        }
+        .search-button:disabled {
+            background-color: #404040;
+            cursor: not-allowed;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .image-card {
+            background: #363636;
+            padding: 10px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .similarity-score {
+            margin-top: 10px;
+            text-align: center;
+            color: #b3b3b3;
+        }
+        .status-message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            text-align: center;
+            background-color: #363636;
+            color: #00bfff;
+            display: none;
+        }
+        .error-message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            text-align: center;
+            background-color: #4a1c1c;
+            color: #ff4444;
+            display: none;
+        }
+        .loading {
+            text-align: center;
+            display: none;
+            margin: 20px 0;
+            color: #00bfff;
+        }
+        .loading:after {
+            content: '...';
+            animation: dots 1s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80% { content: '....'; }
+            100% { content: '.....'; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CLIP Image-Text Search Engine</h1>
+        
+        <!-- Step 1: Select Area -->
+        <div class="step">
+            <div class="step-header">
+                <div class="step-number">1</div>
+                <div class="step-title">Select Search Area</div>
+            </div>
+            <select id="areaSelect" class="area-select">
+                <option value="">-- Select an area to search --</option>
+                {% for area in areas %}
+                <option value="{{ area }}">{{ area }}</option>
+                {% endfor %}
+            </select>
+            <div id="areaStatus" class="status-message"></div>
+        </div>
+
+        <!-- Step 2: Enter Search Text -->
+        <div id="searchStep" class="step" style="display: none;">
+            <div class="step-header">
+                <div class="step-number">2</div>
+                <div class="step-title">Enter Search Text</div>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-box" placeholder="Enter your search query...">
+                <button id="searchButton" onclick="searchImages()" class="search-button">Search</button>
+            </div>
+        </div>
+
+        <div id="error" class="error-message"></div>
+        <div id="loading" class="loading">Processing</div>
+        <div id="results" class="results"></div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const areaSelect = document.getElementById('areaSelect');
+        const areaStatus = document.getElementById('areaStatus');
+        const searchStep = document.getElementById('searchStep');
+        const searchContainer = document.querySelector('.search-container');
+
+        // Area selection change handler
+        areaSelect.addEventListener('change', async function(e) {
+            const area = e.target.value;
+            searchStep.style.display = 'none';
+            searchContainer.style.display = 'none';
+            
+            if (!area) {
+                showStatus('Please select an area', 'info');
+                return;
+            }
+
+            try {
+                showLoading(true);
+                showStatus(`Loading data for ${area}...`, 'info');
+                
+                const response = await fetch('/select_area', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `area_name=${encodeURIComponent(area)}`
+                });
+                
+                const data = await response.json();
+                if (data.error) {
+                    showError(data.error);
+                    showStatus('Failed to load area, please try again', 'error');
+                } else {
+                    showStatus(`Area ${area} selected`, 'success');
+                    searchStep.style.display = 'block';
+                    searchContainer.style.display = 'block';
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+            } catch (error) {
+                showError('Failed to select area');
+                showStatus('Failed to load area, please try again', 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Search input handler
+        searchInput.addEventListener('input', function() {
+            searchButton.disabled = !this.value.trim();
+        });
+
+        // Enter key handler
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !searchButton.disabled) {
+                searchImages();
+            }
+        });
+
+        // Search images function
+        async function searchImages() {
+            const area = areaSelect.value;
+            const query = searchInput.value.trim();
+            
+            if (!area) {
+                showError('Please select an area first');
+                return;
+            }
+            
+            if (!query) {
+                showError('Please enter search text');
+                return;
+            }
+
+            showLoading(true);
+            clearError();
+            clearResults();
+
+            try {
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `query=${encodeURIComponent(query)}&top_k=50`
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+                
+                if (data.results.length === 0) {
+                    showStatus('No matching images found', 'info');
+                } else {
+                    showStatus(`Found ${data.results.length} related images`, 'success');
+                    displayResults(data.results);
+                }
+            } catch (error) {
+                showError('Search failed');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display search results
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('results');
+            results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                const img = document.createElement('img');
+                img.src = `/image/${encodeURIComponent(result.filename)}`;
+                img.alt = result.filename;
+                img.loading = 'lazy';
+                
+                const score = document.createElement('div');
+                score.className = 'similarity-score';
+                score.textContent = `Similarity: ${result.similarity.toFixed(4)}`;
+                
+                card.appendChild(img);
+                card.appendChild(score);
+                resultsDiv.appendChild(card);
+            });
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const status = document.getElementById('areaStatus');
+            status.textContent = message;
+            status.style.display = 'block';
+            
+            // Set style based on message type
+            switch(type) {
+                case 'error':
+                    status.style.backgroundColor = '#4a1c1c';
+                    status.style.color = '#ff4444';
+                    break;
+                case 'success':
+                    status.style.backgroundColor = '#1c3c4a';
+                    status.style.color = '#00bfff';
+                    break;
+                case 'info':
+                default:
+                    status.style.backgroundColor = '#363636';
+                    status.style.color = '#00bfff';
+                    break;
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const error = document.getElementById('error');
+            error.textContent = message;
+            error.style.display = 'block';
+            setTimeout(() => {
+                error.style.display = 'none';
+            }, 5000);
+        }
+
+        // Clear error message
+        function clearError() {
+            const error = document.getElementById('error');
+            error.style.display = 'none';
+        }
+
+        // Clear search results
+        function clearResults() {
+            const results = document.getElementById('results');
+            results.innerHTML = '';
+        }
+
+        // Show/hide loading animation
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        // Initialize page
+        window.onload = function() {
+            showStatus('Please select an area to begin', 'info');
+        };
+    </script>
+</body>
+</html> 
